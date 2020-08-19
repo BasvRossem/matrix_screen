@@ -1,104 +1,98 @@
-var streams = [];
-symbolSize = 0;
-symbolAmountMax = 20;
+var COLOR_GREEN;
+var COLOR_LIGHT_GREEN;
+var COLOR_BLACK;
+var COLOR_BLACK_TRANSPARENT;
 
-function setup(){
-  if( window.innerWidth < 1000 ) {
-    symbolSize = window.innerWidth / 12;
-    console.log(window.innerWidth);
-    symbolAmountMax = round((window.innerHeight / symbolSize) * 0.75);
-  } else {
-    symbolSize = 30;
-    console.log(window.innerWidth);
-  }
-  createCanvas(window.innerWidth, window.innerHeight);
-  background(0);
-  
-  var x = 0;
-  for (var i = 0; i <= width / symbolSize; i++) {
-    stream = new Stream;
-    stream.setStreamValues(x, random(-1000, 0));
-    streams.push(stream);
-    x += symbolSize;
-  }
-  textFont('Consolas');
-  textSize(symbolSize);
+var streams = [];
+var symbolSize = 30;
+var symbolAmountMax = 20;
+
+function setup() {
+    // Set colors
+    COLOR_GREEN = color(0, 255, 70);
+    COLOR_LIGHT_GREEN = color(140, 255, 170);
+    COLOR_BLACK = color(0, 0, 0);
+    COLOR_BLACK_TRANSPARENT = color(0, 0, 0, 90);
+
+    // Create canvas
+    createCanvas(window.innerWidth, window.innerHeight);
+    background(0);
+
+    // Init streams
+    var pos_x = 0;
+    for (var i = 0; i <= width / symbolSize; i++) {
+        stream = new Stream(pos_x, random(500, 1000));
+        streams.push(stream);
+        pos_x += symbolSize;
+    }
+
+    // Text settings
+    if (window.innerWidth < 1000) {
+        symbolSize = window.innerWidth / 12;
+        symbolAmountMax = round((window.innerHeight / symbolSize) * 0.75);
+    }
+    textFont("Consolas");
+    textSize(symbolSize);
 }
 
 function draw() {
-  background(0, 90);
-  streams.forEach(function(stream) {
-    stream.render();
-  });
+    time_start = new Date().getTime();
+
+    background(COLOR_BLACK_TRANSPARENT);
+    streams.forEach((stream) => stream.render());
 }
 
-function Symbol(x, y){
-  this.x = x;
-  this.y = y;
-  this.character;
-  
-  var switchInterval = round(random(20, 100));
-
-  this.setCharacter = function(){
-    this.character = String.fromCharCode(0x30A0 + round(random(0, 96)));
-  }
-
-  this.render = function(){
-    fill(0, 255, 70);
-    text(this.character, this.x, this.y);
-    if(frameCount % switchInterval == 0){
-      this.setCharacter();
+class MySymbol {
+    constructor(x = 0, y = 0) {
+        this.x = x;
+        this.y = y;
+        this.character = String.fromCharCode(0x30a0 + round(random(0, 96)));
+        this.changeCharacterInterval = round(random(150, 300));
     }
-  }
 
-  this.renderFirst = function(){
-    fill(140, 255, 170);
-    text(this.character, this.x, this.y);
-    if(frameCount % switchInterval == 0){
-      this.setCharacter();
+    setCharacter() {
+        this.character = String.fromCharCode(0x30a0 + round(random(0, 90)));
     }
-  }
+
+    render() {
+        text(this.character, this.x, this.y);
+        if (frameCount % this.changeCharacterInterval == 0) {
+            this.setCharacter();
+        }
+    }
 }
 
-function Stream(){
-  this.x = 0;
-  this.y = 0;
-  this.symbols = [];
-  this.amountOfSymbols = round(random(5,symbolAmountMax));
-  
-  var firstStream = round(random(0,2)) == 0;
-  var lastRendered = 0;
-  var switchInterval = round(random(10, 30));
+class Stream {
+    constructor(x = 0, y = 0) {
+        this.x = x;
+        this.y = y;
+        this.symbols = [];
+        this.amountOfSymbols = round(random(5, symbolAmountMax));
+        this.firstStream = round(random(0, 2)) == 0;
+        this.moveDownInterval = round(random(10, 30));
 
-  this.setStreamValues = function(x, y){
-    this.x = x;
-    this.y = y;
-  }
+        while (this.symbols.length < this.amountOfSymbols) {
+            this.generateSymbol();
+        }
+    }
 
-  this.generateSymbol = function(){
-    if(this.y > innerHeight){
-      this.y = -30;
+    generateSymbol() {
+        if (this.y > innerHeight) {
+            this.y = symbolSize * -1;
+        }
+        this.symbols.unshift(new MySymbol(this.x, this.y));
+        this.y += symbolSize;
     }
-    symbol = new Symbol(this.x, this.y);
-    symbol.setCharacter();
-    this.symbols.unshift(symbol);
-    this.y += symbolSize;
-  }
 
-  this.render = function(){
-    if(this.symbols.length < this.amountOfSymbols){
-      this.generateSymbol();
+    render() {
+        this.symbols.forEach(function (symbol, index) {
+            this.firstStream && index == 0 ? fill(COLOR_LIGHT_GREEN) : fill(COLOR_GREEN);
+            symbol.render();
+        }, this);
+
+        if (frameCount % this.moveDownInterval == 0) {
+            this.symbols.pop();
+            this.generateSymbol();
+        }
     }
-    this.symbols.forEach(function(symbol, index) {
-      if(index == 0 && firstStream){
-        symbol.renderFirst();
-      } else{
-        symbol.render();
-      }
-    });
-    if(frameCount % switchInterval == 0){
-      this.symbols.pop();
-      this.generateSymbol();
-    }
-  }
 }
