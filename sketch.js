@@ -21,7 +21,7 @@ function setup() {
     // Init streams
     var pos_x = 0;
     for (var i = 0; i <= width / symbolSize; i++) {
-        stream = new Stream(pos_x, random(500, 1000));
+        stream = new Stream(pos_x, random(-500, -4000));
         streams.push(stream);
         pos_x += symbolSize;
     }
